@@ -1,0 +1,5 @@
+{
+    "nodeRpcUrl": "https://ropsten.infura.io",
+    "ipfsGateway": "https://ipfs.infura.io",
+    "isInfura": true
+}

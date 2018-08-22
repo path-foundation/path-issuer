@@ -1,0 +1,5 @@
+{
+    "nodeRpcUrl": "http://127.0.0.1:7545",
+    "ipfsGateway": "http://localhost:5001/ipfs",
+    "isInfura": false
+}

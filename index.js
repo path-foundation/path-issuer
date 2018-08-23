@@ -23,7 +23,10 @@ const config = Config({ network, infuraApiKey });
 
 const web3 = new Web3(config.eth.rpcUrl);
 
-// Interactive function to import a key or create a new one
+/**
+ * @description Add the keystore from a new or an existig private key.
+ * The function is interactive, asking for user input
+ */
 const addKeystore = async () => {
     const answers = await inquirer.prompt([
         keystorePrompts.createOrImportPrivateKey,
@@ -49,6 +52,41 @@ const addKeystore = async () => {
     fs.writeFileSync(keystorePath, JSON.stringify(encrypted, null, 2));
 };
 
+/**
+ * @description Reads the keystore file,
+ * decrypts it using the provided password
+ * and returns the decrypted account
+ * @param pwd - password to unlock the account
+ * @returns decrypted account
+ */
+const readKeystore = async (pwd) => {
+    // Retrieve the encrypted account from the keystore
+    const keystore = fs.readFileSync(keystorePath).toString();
+
+    // Parse the account string to json
+    let encrypted;
+    try {
+        encrypted = JSON.parse(keystore);
+    } catch (error) {
+        // TODO: Add instructions to restore the keystore
+        throw new Error('Keystore file is corrupt.');
+    }
+
+    // decrypt the account
+    let decrypted;
+    try {
+        decrypted = web3.eth.accounts.decrypt(encrypted, pwd);
+    } catch (err) {
+        if (err.message.includes('wrong password')) {
+            throw new Error('Password is incorrect');
+        } else {
+            throw new Error(err);
+        }
+    }
+
+    return decrypted;
+};
+
 const initService = async () => {
     if (fs.existsSync(keystorePath)) {
         console.error('The service has already been initialized.');
@@ -72,37 +110,21 @@ const startService = async () => {
         process.exit(1);
     }
 
-    // Retrieve the encrypted account from the keystore
-    const keystore = fs.readFileSync(keystorePath).toString();
-
-    // Parse the account string to json
-    let encrypted;
-    try {
-        encrypted = JSON.parse(keystore);
-    } catch (error) {
-        // TODO: Add instructions to restore the keystore
-        logger.error('Keystore file is corrupt.');
-        process.exit(1);
-    }
-
     // Ask for the account password
-    const pwd = (await inquirer.prompt(keystorePrompts.enterKeystorePassword)).enterKeystorePassword;
+    const pwd = (await inquirer.prompt(keystorePrompts.enterKeystorePassword))
+        .enterKeystorePassword;
 
-    // decrypt the account
-    let decrypted;
+    let account;
+
     try {
-        decrypted = web3.eth.accounts.decrypt(encrypted, pwd);
-    } catch (err) {
-        if (err.message.includes('wrong password')) {
-            logger.error('Password is incorrect');
-        } else {
-            logger.error(err);
-        }
+        account = await readKeystore(pwd);
+    } catch (error) {
+        logger.error(error);
         process.exit(1);
     }
 
-    web3.eth.accounts.wallet.add(decrypted);
-    web3.eth.defaultAccount = decrypted.address;
+    web3.eth.accounts.wallet.add(account);
+    web3.eth.defaultAccount = account.address;
 
     // Display the network
     try {

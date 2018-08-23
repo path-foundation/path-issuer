@@ -4,8 +4,8 @@ module.exports = {
     createOrImportPrivateKey: {
         type: 'list',
         name: 'createOrImportPrivateKey',
-        message: 'Do you want to export an existing private key or create a new one?',
-        choices: ['Export existing private key', 'Create a new private key'],
+        message: 'Do you want to import an existing private key or create a new one?',
+        choices: ['Import existing private key', 'Create a new private key'],
     },
     enterPrivateKey: {
         type: 'input',
@@ -20,15 +20,20 @@ module.exports = {
                 reject(new Error('Private key is not in correct format'));
             }
         }),
-        when: (answers) => answers.createOrImportPrivateKey === 'Export existing private key',
+        when: (answers) => answers.createOrImportPrivateKey === 'Import existing private key',
     },
-    enterKeystorePassword: {
+    enterNewKeystorePassword: {
         type: 'password',
-        name: 'enterKeystorePassword',
-        message: 'Eenter the password to encrypt your account',
+        name: 'enterNewKeystorePassword',
+        message: 'Enter the password to encrypt your account',
         validate: (input) => new Promise((resolve, reject) => {
             if (input && input.length >= 8) resolve(true);
             else reject(new Error('Password is too short (8 characters min)'));
         }),
+    },
+    enterKeystorePassword: {
+        type: 'password',
+        name: 'enterKeystorePassword',
+        message: 'Enter the account password',
     },
 };

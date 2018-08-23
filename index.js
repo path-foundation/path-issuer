@@ -11,6 +11,7 @@ const routes = require('./middleware/routes.js');
 const Config = require('./config/config.js');
 const Logger = require('./logging/logger.js');
 const keystorePrompts = require('./prompts/keystore-prompts');
+const { readKeystore, addKeystore } = require('./util/keystore');
 
 const keystorePath = './keystore.json';
 
@@ -23,77 +24,13 @@ const config = Config({ network, infuraApiKey });
 
 const web3 = new Web3(config.eth.rpcUrl);
 
-/**
- * @description Add the keystore from a new or an existig private key.
- * The function is interactive, asking for user input
- */
-const addKeystore = async () => {
-    const answers = await inquirer.prompt([
-        keystorePrompts.createOrImportPrivateKey,
-        keystorePrompts.enterPrivateKey,
-        keystorePrompts.enterNewKeystorePassword,
-    ]);
-
-    let account;
-    if (answers[keystorePrompts.createOrImportPrivateKey.name] ===
-        keystorePrompts.createOrImportPrivateKey.choices[0]) {
-        // Import an existing private key
-        const privateKey = answers[keystorePrompts.enterPrivateKey.name];
-        account = web3.eth.accounts.wallet.add(`0x${privateKey}`);
-    } else {
-        // Create a new private key/account
-        account = web3.eth.accounts.wallet.create(1, web3.utils.randomHex(32));
-    }
-
-    web3.eth.defaultAccount = account.address;
-
-    // Encrypt and save to file
-    const encrypted = account.encrypt(answers[keystorePrompts.enterNewKeystorePassword.name]);
-    fs.writeFileSync(keystorePath, JSON.stringify(encrypted, null, 2));
-};
-
-/**
- * @description Reads the keystore file,
- * decrypts it using the provided password
- * and returns the decrypted account
- * @param pwd - password to unlock the account
- * @returns decrypted account
- */
-const readKeystore = async (pwd) => {
-    // Retrieve the encrypted account from the keystore
-    const keystore = fs.readFileSync(keystorePath).toString();
-
-    // Parse the account string to json
-    let encrypted;
-    try {
-        encrypted = JSON.parse(keystore);
-    } catch (error) {
-        // TODO: Add instructions to restore the keystore
-        throw new Error('Keystore file is corrupt.');
-    }
-
-    // decrypt the account
-    let decrypted;
-    try {
-        decrypted = web3.eth.accounts.decrypt(encrypted, pwd);
-    } catch (err) {
-        if (err.message.includes('wrong password')) {
-            throw new Error('Password is incorrect');
-        } else {
-            throw new Error(err);
-        }
-    }
-
-    return decrypted;
-};
-
 const initService = async () => {
     if (fs.existsSync(keystorePath)) {
         console.error('The service has already been initialized.');
         process.exit(1);
     }
 
-    await addKeystore();
+    await addKeystore(keystorePath, web3);
 
     // TODO: Add better explanation; also mention that they can backup private key
     // by running `node index.js --displayPk`
@@ -117,7 +54,7 @@ const startService = async () => {
     let account;
 
     try {
-        account = await readKeystore(pwd);
+        account = await readKeystore(keystorePath, web3, pwd);
     } catch (error) {
         logger.error(error);
         process.exit(1);

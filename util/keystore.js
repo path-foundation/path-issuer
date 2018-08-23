@@ -2,6 +2,7 @@
 const fs = require('fs');
 const inquirer = require('inquirer');
 const errors = require('../constants/errors');
+const normalizePk = require('../util/normalizePk');
 
 const keystorePrompts = require('../prompts/keystore-prompts');
 /**
@@ -20,10 +21,11 @@ const addKeystore = async (keystorePath, web3) => {
         keystorePrompts.createOrImportPrivateKey.choices[0]) {
         // Import an existing private key
         const privateKey = answers[keystorePrompts.enterPrivateKey.name];
-        account = web3.eth.accounts.wallet.add(`0x${privateKey}`);
+        account = web3.eth.accounts.wallet.add(normalizePk(privateKey));
     } else {
         // Create a new private key/account
-        account = web3.eth.accounts.wallet.create(1, web3.utils.randomHex(32));
+        account = web3.eth.accounts.create(web3.utils.randomHex(32));
+        web3.eth.accounts.wallet.add(account);
     }
 
     web3.eth.defaultAccount = account.address;
@@ -31,6 +33,9 @@ const addKeystore = async (keystorePath, web3) => {
     // Encrypt and save to file
     const encrypted = account.encrypt(answers[keystorePrompts.enterNewKeystorePassword.name]);
     fs.writeFileSync(keystorePath, JSON.stringify(encrypted, null, 2));
+
+    // We return this for unit tests, we don't really use this return value anywhere
+    return encrypted;
 };
 
 /**

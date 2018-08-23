@@ -5,11 +5,10 @@ const proxyquire = require('proxyquire');
 const Web3 = require('web3');
 
 const errors = require('../constants/errors');
+const prompts = require('../prompts/keystore-prompts');
 
 chai.use(chaiAsPromised);
 const { expect } = chai;
-
-const web3 = new Web3();
 
 const keystore = {
     version: 3,
@@ -36,12 +35,15 @@ const keystore = {
 const pk = '0x55e00820399a41b9e1334219483c665cdb9808db9eacdbcea01c9cea0f1ef6bc';
 const pwd = 'ppppppppp';
 
-describe('Reading the correct keystore', async () => {
-    let keystoreUtil,
+describe('Reading the keystore', async () => {
+    let web3,
+        keystoreUtil,
         keystoreUtilCorrupt,
         keystoreUtilInvalidV3Wallet;
 
     before(() => {
+        web3 = new Web3();
+
         const fs = {
             readFileSync: () => JSON.stringify(keystore),
         };
@@ -79,5 +81,56 @@ describe('Reading the correct keystore', async () => {
     it('Read a corrupt keystore (unexpected JSON)', () => {
         const promise = keystoreUtilInvalidV3Wallet.readKeystore(null, web3, 'blah');
         return expect(promise).to.be.rejectedWith(errors.notValidWallet);
+    });
+});
+
+describe('Adding a keystore', async () => {
+    let web3,
+        keystoreUtilImport,
+        keystoreUtilCreate;
+    before(() => {
+        web3 = new Web3();
+
+        const fs = { writeFileSync: () => {} };
+
+        const inquirerImport = {
+            prompt: async () => {
+                const result = {};
+                // Import
+                [result[prompts.createOrImportPrivateKey.name]] = prompts.createOrImportPrivateKey.choices;
+                // Private Key
+                result[prompts.enterPrivateKey.name] = pk;
+                // Password
+                result[prompts.enterNewKeystorePassword.name] = pwd;
+                return result;
+            },
+        };
+
+        const inquirerCreate = {
+            prompt: async () => {
+                const result = {};
+                // Import
+                [, result[prompts.createOrImportPrivateKey.name]] = prompts.createOrImportPrivateKey.choices;
+                // Password
+                result[prompts.enterNewKeystorePassword.name] = pwd;
+                return result;
+            },
+        };
+
+        keystoreUtilImport = proxyquire('../util/keystore.js', { fs, inquirer: inquirerImport });
+        keystoreUtilCreate = proxyquire('../util/keystore.js', { fs, inquirer: inquirerCreate });
+    });
+
+    it('Import an existing private key', async () => {
+        const encrypted = await keystoreUtilImport.addKeystore('', web3);
+        const account = web3.eth.accounts.decrypt(JSON.stringify(encrypted), pwd);
+        expect(account.privateKey).to.eql(pk);
+    });
+
+    it('Create a private key', async () => {
+        const encrypted = await keystoreUtilCreate.addKeystore('', web3);
+        const account = web3.eth.accounts.decrypt(JSON.stringify(encrypted), pwd);
+        expect(account).to.have.property('address');
+        expect(account).to.have.property('privateKey');
     });
 });

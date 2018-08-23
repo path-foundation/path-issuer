@@ -39,7 +39,7 @@ const pwd = 'ppppppppp';
 describe('Reading the correct keystore', async () => {
     let keystoreUtil,
         keystoreUtilCorrupt,
-        keystoreUtilIncorrect;
+        keystoreUtilInvalidV3Wallet;
 
     before(() => {
         const fs = {
@@ -50,7 +50,7 @@ describe('Reading the correct keystore', async () => {
             readFileSync: () => `${JSON.stringify(keystore)} }}`,
         };
 
-        const fsIncorrect = {
+        const fsInvalidV3Wallet = {
             readFileSync: () => JSON.stringify({ a: 'b' }),
         };
 
@@ -58,7 +58,7 @@ describe('Reading the correct keystore', async () => {
 
         keystoreUtilCorrupt = proxyquire('../util/keystore.js', { fs: fsCorrupt });
 
-        keystoreUtilIncorrect = proxyquire('../util/keystore.js', { fs: fsIncorrect });
+        keystoreUtilInvalidV3Wallet = proxyquire('../util/keystore.js', { fs: fsInvalidV3Wallet });
     });
 
     it('Read the correct keystore with the correct password', async () => {
@@ -77,7 +77,7 @@ describe('Reading the correct keystore', async () => {
     });
 
     it('Read a corrupt keystore (unexpected JSON)', () => {
-        const promise = keystoreUtilIncorrect.readKeystore(null, web3, 'blah');
+        const promise = keystoreUtilInvalidV3Wallet.readKeystore(null, web3, 'blah');
         return expect(promise).to.be.rejectedWith(errors.notValidWallet);
     });
 });

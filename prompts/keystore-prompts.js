@@ -8,7 +8,7 @@ module.exports = {
         choices: ['Import existing private key', 'Create a new private key'],
     },
     enterPrivateKey: {
-        type: 'input',
+        type: 'password',
         name: 'enterPrivateKey',
         message: 'Please enter the private key',
         validate: (input) => new Promise((resolve, reject) => {
@@ -29,6 +29,15 @@ module.exports = {
         validate: (input) => new Promise((resolve, reject) => {
             if (input && input.length >= 8) resolve(true);
             else reject(new Error('Password is too short (8 characters min)'));
+        }),
+    },
+    reenterNewKeystorePassword: {
+        type: 'password',
+        name: 'reenterNewKeystorePassword',
+        message: 'Re-enter the password to encrypt your account',
+        validate: (input, answers) => new Promise((resolve, reject) => {
+            if (input === answers.enterNewKeystorePassword) resolve(true);
+            else reject(new Error('Password doesn\'t match'));
         }),
     },
     enterKeystorePassword: {

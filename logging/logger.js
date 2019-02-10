@@ -10,7 +10,7 @@ const createWinstonLogger = (folder) => winston.createLogger({
             handleExceptions: true,
         }),
         new winston.transports.DailyRotateFile({
-            filename: `${folder}/%DATE%.process.log`,
+            filename: folder ? `${folder}/%DATE%.process.log` : '.',
             datePattern: 'YYYY-MM-DD',
             prepend: true,
             createTree: true,

@@ -1,5 +1,12 @@
 {
     "nodeRpcUrl": "https://ropsten.infura.io",
     "ipfsGateway": "https://ipfs.infura.io",
-    "isInfura": true
+    "isInfura": true,
+    "addresses": {
+        "Certificates": "",
+        "Escrow": "",
+        "Issuers": "",
+        "PathToken": "",
+        "PublicKeys": ""
+    }
 }

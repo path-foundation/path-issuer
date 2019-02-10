@@ -74,6 +74,7 @@ const startService = async () => {
 
     // Display the account balance
     const balance = web3.utils.fromWei(await web3.eth.getBalance(web3.eth.defaultAccount));
+    logger.info(`Your address: ${web3.eth.defaultAccount}`);
     logger.info(`Your account balance: ${balance} ETH`);
 
     // Create IPFS client
@@ -91,7 +92,7 @@ const startService = async () => {
     const app = express();
 
     // Add routes
-    routes(app, web3, config, ipfs);
+    routes(app, web3, config, ipfs, logger);
 
     // Start an http server
     const port = argv.port || 8080;

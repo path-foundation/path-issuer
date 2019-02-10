@@ -10,7 +10,6 @@ const config = {
 module.exports = (params) => {
     const { network, infuraApiKey } = params;
     const conf = config[network];
-    conf.contracts = require(`./abi/${network}.abi.json`);
 
     // IPFS stuff
     const uri = parseUri(conf.ipfsGateway);

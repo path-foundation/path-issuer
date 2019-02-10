@@ -2,7 +2,7 @@
 const fs = require('fs');
 const inquirer = require('inquirer');
 const errors = require('../constants/errors');
-const normalizePk = require('../util/normalizePk');
+const normalizePrivateKey = require('../util/normalizePrivateKey');
 
 const keystorePrompts = require('../prompts/keystore-prompts');
 /**
@@ -14,6 +14,7 @@ const addKeystore = async (keystorePath, web3) => {
         keystorePrompts.createOrImportPrivateKey,
         keystorePrompts.enterPrivateKey,
         keystorePrompts.enterNewKeystorePassword,
+        keystorePrompts.reenterNewKeystorePassword,
     ]);
 
     let account;
@@ -21,7 +22,7 @@ const addKeystore = async (keystorePath, web3) => {
         keystorePrompts.createOrImportPrivateKey.choices[0]) {
         // Import an existing private key
         const privateKey = answers[keystorePrompts.enterPrivateKey.name];
-        account = web3.eth.accounts.wallet.add(normalizePk(privateKey));
+        account = web3.eth.accounts.wallet.add(normalizePrivateKey(privateKey));
     } else {
         // Create a new private key/account
         account = web3.eth.accounts.create(web3.utils.randomHex(32));
